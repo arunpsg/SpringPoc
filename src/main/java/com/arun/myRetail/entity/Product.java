@@ -18,6 +18,15 @@ public class Product {
 	
 	private CurrentPrice current_price;
 
+	public Product() {
+	}
+	
+	public Product(int productId, CurrentPrice current_price) {
+		super();
+		this.productId = productId;
+		this.current_price = current_price;
+	}
+	
 	/**
 	 * @return the productId
 	 */

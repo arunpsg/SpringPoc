@@ -11,6 +11,16 @@ public class CurrentPrice {
 
 	private String value;
 	private String currency_code;
+	
+	public CurrentPrice() {
+	}
+	
+	public CurrentPrice(String value, String currency_code) {
+		super();
+		this.value = value;
+		this.currency_code = currency_code;
+	}
+	
 	/**
 	 * @return the value
 	 */
