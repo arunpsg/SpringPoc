@@ -37,17 +37,6 @@ public class ProductController {
 	}
 	
 	/**
-	 * Saves the given product to DB
-	 * 
-	 * @param product to be saved to DB
-	 * @return product saved in the DB
-	 */
-	/*@RequestMapping(method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public Product addProduct(@RequestBody Product product) {
-		return productService.addProduct(product);
-	}*/
-
-	/**
 	 * Updates the given product details to DB.
 	 * 
 	 * @param id
