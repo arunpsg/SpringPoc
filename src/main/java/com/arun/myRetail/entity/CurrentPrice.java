@@ -3,13 +3,36 @@
  */
 package com.arun.myRetail.entity;
 
+import javax.validation.constraints.DecimalMax;
+import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Pattern;
+
+import org.hibernate.validator.constraints.Length;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+import org.springframework.format.annotation.NumberFormat;
+import org.springframework.format.annotation.NumberFormat.Style;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * @author Arun
  *
  */
+@Document(collection="CURRENT_PRICE")
 public class CurrentPrice {
 
+	@Field("value")
+	@NumberFormat(style = Style.CURRENCY)
+	@DecimalMax(value = "999.999", message = "The price value can not be more than 999.999")
+	@DecimalMin(value = "1.00", message = "The price value can not be less than 1.00")
+	@JsonProperty("value")
 	private String value;
+	
+	@Pattern(regexp = "^[^0-9]+$", message = "The currencyCode can contain characters only")
+	@Length( max = 3, message = "The currencyCode can contain maximum of 3 characters")
+	@Field("currency_code")
+	@JsonProperty("currency_code")
 	private String currency_code;
 	
 	public CurrentPrice() {

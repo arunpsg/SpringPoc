@@ -3,19 +3,32 @@
  */
 package com.arun.myRetail.entity;
 
+import javax.validation.Valid;
+
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.Field;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * @author Arun
  *
  */
+@Document(collection="PRODUCT")
 public class Product {
 
+	@Field("product_id")
+	@JsonProperty("productId")
 	@Id
 	private int productId;
 	
+	@Field("product_name")
+	@JsonProperty("name")
 	private String name;
 	
+	@Valid
+	@JsonProperty("current_price")
 	private CurrentPrice current_price;
 
 	public Product() {
