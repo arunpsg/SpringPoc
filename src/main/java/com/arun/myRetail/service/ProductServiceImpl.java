@@ -7,14 +7,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -28,7 +25,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.arun.myRetail.entity.Product;
 import com.arun.myRetail.exception.ExternalApiCallException;
 import com.arun.myRetail.exception.InvalidRequestException;
-import com.arun.myRetail.exception.ProductAlreadyExistException;
 import com.arun.myRetail.exception.ProductNotFoundException;
 import com.arun.myRetail.repository.ProductRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -77,12 +73,12 @@ public class ProductServiceImpl implements ProductService {
 		
 		validateProduct(productId);
 		
-		Optional<Product> existingProductContainer = productRepository.findById(id);
-		if (!existingProductContainer.isPresent()) {
+		Product existingProduct= productRepository.findByProductId(id);
+		if (existingProduct == null) {
 			log.info("Product with id " + productId + " not found in database");
 			throw new ProductNotFoundException("MY-RETAIL-1001", "No product found for product id" + productId);
 		}
-		Product existingProduct = existingProductContainer.get();
+		
 		log.info("Original Price %s for product Id %s : " + existingProduct.getCurrent_price() + productId);
 		existingProduct.setCurrent_price(product.getCurrent_price());		
 		Product updatedProduct = productRepository.save(existingProduct);
@@ -92,29 +88,10 @@ public class ProductServiceImpl implements ProductService {
 	}
 
 	/* (non-Javadoc)
-	 * @see com.arun.myRetail.service.ProductService#addProduct(com.arun.myRetail.entity.Product)
-	 */
-	/*@Override
-	public Product addProduct(Product product) {
-		int productId = product.getProductId();
-		
-		validateProduct(productId);
-		Optional<Product> existingProductContainer = productRepository.findById(productId);
-		if (!existingProductContainer.isPresent()) {
-			throw new ProductAlreadyExistException("MY-RETAIL-2001", "Product with id=" + productId
-					+ " already exists!");
-		} else {
-			productRepository.save(product);
-		}
-		return null;
-	}*/
-
-	/* (non-Javadoc)
 	 * @see com.arun.myRetail.service.ProductService#getProduct(java.lang.String)
 	 */
 	@Override
 	public Product getProduct(int id) {
-//		productRepository.findOne(Query.query(Criteria.where("id").is(id)), Product.class, "product");
 		Product product = productRepository.findByProductId(id);
 		if (product == null) {
 			log.error("Error: product details not found for id : " + id);
@@ -153,11 +130,9 @@ public class ProductServiceImpl implements ProductService {
 		URI builtUrl = buildURL(productId);
 		
 		try {
-//			response = restTemplate.getForEntity(builtUrl, String.class);
 			HttpHeaders headersForRestTemplate = new HttpHeaders();
 			headersForRestTemplate.set("Content-Type", "application/json");
 			HttpEntity<String> requestEntity = new HttpEntity<String>(headersForRestTemplate);
-//			String targetUrl = "https://redsky.target.com/v2/pdp/tcin/13860428";
 			response = perFormRestCall(builtUrl, requestEntity);
 			HttpHeaders responseHeaders = response.getHeaders();
 			HttpStatus statusCode = response.getStatusCode();
@@ -170,8 +145,10 @@ public class ProductServiceImpl implements ProductService {
 	            	throw new ExternalApiCallException("MY-RETAIL-1002", "product id : " + productId);
 	            }
 	        }
-//					restTemplate.exchange(targetUrl, HttpMethod.GET, requestEntity, String.class);
 			responseBody = response.getBody();
+			if (!response.getStatusCode().equals(HttpStatus.OK)) {
+				log.error("Error ocurred while retrieving product title, status code: " + response.getStatusCode().value());
+			}
 		} catch (HttpClientErrorException ex) {
 			if (ex.getStatusCode() == HttpStatus.NOT_FOUND) {
 				throw new ProductNotFoundException("MY-RETAIL-1001", "product id : " + productId, ex);
@@ -182,20 +159,17 @@ public class ProductServiceImpl implements ProductService {
 				throw new RuntimeException("product id : " + productId, ex);
 			}
 		} catch (Exception e) {
-			throw new RuntimeException(
-					"Unknown exception while trying to get product title  for product id " + productId, e);
+			throw new RuntimeException("Unknown exception while retrieving product title for product id " + productId, e);
 		}
-		if (!response.getStatusCode().equals(HttpStatus.OK))
-			log.error("Error ocurred while retrieving product title, status code: " + response.getStatusCode().value());
+		
 		ObjectMapper mapper = new ObjectMapper();
-
 		try {
 			JsonNode node = mapper.readTree(responseBody);
 			JsonNode titleNode = node.at(PRODUCT_TITLE_JSON_PATH);
-			log.info("Product Title : " + titleNode);
 			productTitle = titleNode.textValue();
+			log.info("Product Title : " + productTitle);
 		} catch (JsonProcessingException e) {
-			throw new RuntimeException("Problem parsing JSON String for title : " + responseBody, e);
+			throw new ProductNotFoundException("MY-RETAIL-1001", "Product details not found for product id : " + productId, e);
 		} catch (IOException e) {
 			throw new RuntimeException("Error when retrieving product title from string " + responseBody, e);
 		}
@@ -206,7 +180,6 @@ public class ProductServiceImpl implements ProductService {
         try {
         	log.info("performing Rest Call for targetUrl : " + targetUrl.toString());
         	return restTemplate.exchange(targetUrl, HttpMethod.GET, requestEntity, String.class);
-//            return restTemplate.getForEntity(url.trim(), String.class);
         } catch (Exception ex) {
             throw new RuntimeException();
         }
