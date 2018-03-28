@@ -20,7 +20,6 @@ caller.
 | SpringBoot  | 2.0.0  |
 |Mongodb |3.6|
 |Mockito|2.15|
-|Groovy|2.4|
 |Gradle|4.5.1  
 |Swagger|1.5.14
 
